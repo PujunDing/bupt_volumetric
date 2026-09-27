@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "_scaffold_comment": "Task 16 will expand this into validated deterministic weak-network scenarios.",
+  "scenarios": [
+    {"name": "no_loss_5fps", "fps": 5, "loss_percent": 0, "rtt_ms": 5, "seed": 20260927},
+    {"name": "semantic_fec_loss_5pct", "fps": 5, "loss_percent": 5, "rtt_ms": 20, "seed": 20260927}
+  ]
+}

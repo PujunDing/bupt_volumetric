@@ -1,0 +1,7 @@
+function(bupt_volumetric_apply_compiler_options target_name)
+  if(MSVC)
+    target_compile_options(${target_name} PRIVATE /W4 /permissive- /EHsc)
+  else()
+    target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic)
+  endif()
+endfunction()

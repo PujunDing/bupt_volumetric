@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "status": "scaffold-only",
+  "artifacts": [],
+  "comment": "Task 19 may add only freshly built artifacts with source-to-binary provenance."
+}

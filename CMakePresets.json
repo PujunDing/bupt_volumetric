@@ -1,0 +1,45 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "windows-clang-release",
+      "displayName": "Windows clang-cl Release (pure algorithm, no WebRTC link)",
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/cmake/ClangClToolchain.cmake",
+      "binaryDir": "${sourceDir}/../out/bupt_volumetric/clang-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUPT_VOLUMETRIC_BUILD_TESTS": "ON",
+        "BUPT_VOLUMETRIC_ENABLE_RUNTIME": "OFF"
+      }
+    },
+    {
+      "name": "windows-clang-runtime",
+      "displayName": "Windows clang-cl Release (runtime + patched WebRTC link)",
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/cmake/ClangClToolchain.cmake",
+      "binaryDir": "${sourceDir}/../out/bupt_volumetric/clang-runtime",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUPT_VOLUMETRIC_BUILD_TESTS": "ON",
+        "BUPT_VOLUMETRIC_ENABLE_RUNTIME": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {"name": "windows-clang-release", "configurePreset": "windows-clang-release"},
+    {"name": "windows-clang-runtime", "configurePreset": "windows-clang-runtime"}
+  ],
+  "testPresets": [
+    {
+      "name": "windows-clang-release",
+      "configurePreset": "windows-clang-release",
+      "output": {"outputOnFailure": true}
+    },
+    {
+      "name": "windows-clang-runtime",
+      "configurePreset": "windows-clang-runtime",
+      "output": {"outputOnFailure": true}
+    }
+  ]
+}

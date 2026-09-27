@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "status": "task12-fec-send-verified",
+  "upstream_commit": "8a3d684776938a4614f892f81859136ff4855ea3",
+  "baseline": {
+    "captured_on": "2026-09-27",
+    "build_directory": "out/Default",
+    "build_args": {
+      "is_debug": false,
+      "target_cpu": "x64",
+      "is_clang": true,
+      "use_lld": false,
+      "treat_warnings_as_errors": false,
+      "rtc_enable_win_wgc": false
+    },
+    "webrtc_library_bytes": 321831232,
+    "meaningful_preexisting_changes": [
+      "BUILD.gn",
+      "examples/peerconnection/client/conductor.cc",
+      "modules/audio_device/BUILD.gn",
+      "modules/desktop_capture/BUILD.gn",
+      "rtc_base/BUILD.gn",
+      "rtc_tools/BUILD.gn"
+    ],
+    "preexisting_untracked_files": [
+      "build_our_peer_client.sh"
+    ]
+  },
+  "spike": {
+    "phase": "Task 7 go/no-go gate",
+    "decision": "GO",
+    "test_files_modified": [
+      "modules/rtp_rtcp/source/ulpfec_generator_unittest.cc",
+      "video/rtp_video_stream_receiver2_unittest.cc"
+    ],
+    "failing_tests": [
+      "UlpfecGeneratorTest.CannotFlushASemanticBlockWithoutMarker",
+      "RtpVideoStreamReceiver2Test.MissingMiddlePacketBlocksWholeFrameAssembly"
+    ],
+    "build_requirement": "DEPOT_TOOLS_WIN_TOOLCHAIN=0 (local MSVC 14.29.30133)"
+  },
+  "patch": {
+    "phase": "Task 8 minimal upstream patch",
+    "production_files": [
+      "modules/rtp_rtcp/source/video_fec_generator.h",
+      "modules/rtp_rtcp/source/ulpfec_generator.h",
+      "modules/rtp_rtcp/source/ulpfec_generator.cc",
+      "video/rtp_video_stream_receiver2.h",
+      "video/rtp_video_stream_receiver2.cc"
+    ],
+    "capabilities": [
+      "explicit FEC block flush (VideoFecGenerator::FlushBlock / UlpfecGenerator::FlushBlock)",
+      "per-block protection params via existing SetProtectionParameters + GenerateFec",
+      "post-FEC pre-assembly source-payload observer (RtpVideoStreamReceiver2::PostFecSourcePayloadObserver)"
+    ],
+    "test_files": [
+      "modules/rtp_rtcp/source/ulpfec_generator_unittest.cc",
+      "video/rtp_video_stream_receiver2_unittest.cc"
+    ],
+    "tests_added": [
+      "UlpfecGeneratorTest.FlushesASemanticBlockWithoutMarker",
+      "UlpfecGeneratorTest.SemanticBlocksUseTheirOwnProtectionRates",
+      "RtpVideoStreamReceiver2Test.PostFecObserverReceivesSourcePayloadMetadata"
+    ]
+  },
+  "files": [
+    "modules/rtp_rtcp/source/video_fec_generator.h",
+    "modules/rtp_rtcp/source/ulpfec_generator.h",
+    "modules/rtp_rtcp/source/ulpfec_generator.cc",
+    "video/rtp_video_stream_receiver2.h",
+    "video/rtp_video_stream_receiver2.cc"
+  ],
+  "tests": [
+    "UlpfecGeneratorTest.FlushesASemanticBlockWithoutMarker",
+    "UlpfecGeneratorTest.SemanticBlocksUseTheirOwnProtectionRates",
+    "RtpVideoStreamReceiver2Test.PostFecObserverReceivesSourcePayloadMetadata"
+  ],
+  "comment": "Task 8 patch + Task 9 codec factory. obj/webrtc.lib was rebuilt from the patched source (now 321,837,072 bytes, mtime 2026-09-27) and is provenance-checked by bupt_volumetric_import_webrtc() before linking. The runtime CMake preset (windows-clang-runtime) links it into bupt_volumetric_rtc; the pure-algorithm preset (windows-clang-release) still never links WebRTC. 54/54 bupt_volumetric tests pass.",
+  "task9": {
+    "patched_webrtc_library_bytes": 321837072,
+    "runtime_preset": "windows-clang-runtime",
+    "codec_files": [
+      "include/bupt_volumetric/rtc/octree_sim_encoder_factory.h",
+      "src/rtc/octree_sim_encoder_factory.cc",
+      "include/bupt_volumetric/rtc/octree_sim_encoder.h",
+      "src/rtc/octree_sim_encoder.cc",
+      "include/bupt_volumetric/rtc/octree_sim_decoder.h",
+      "src/rtc/octree_sim_decoder.cc"
+    ],
+    "provenance_check": "webrtc.lib mtime must be newer than every Task 8 patched source file"
+  },
+  "pacer_stats_patch": {
+    "phase": "Task 11 read-only stats observation",
+    "invariant": "Read-only exposure of the existing Call::Stats::pacer_delay_ms through RTCIceCandidatePairStats; no pacer, GoogCC, task-queue, or send-scheduling behavior is changed.",
+    "files": [
+      "api/stats/rtcstats_objects.h",
+      "stats/rtcstats_objects.cc",
+      "pc/rtc_stats_collector.cc",
+      "pc/rtc_stats_collector_unittest.cc"
+    ],
+    "field": "RTCIceCandidatePairStats::pacer_delay (seconds, selected/best pair only)",
+    "serialization": "AttributeInit(\"pacerDelay\", &pacer_delay)",
+    "upstream_test": "rtc_stats_collector_unittests --gtest_filter=*PacerDelay* (2/2)",
+    "rebuilt_webrtc_library_bytes": 321838578
+  },
+  "fec_send_seam": {
+    "phase": "Task 12 native FEC send path",
+    "invariant": "Per-frame ULPFEC protection override only; no pacer/GoogCC/egress algorithm change. The encoder may attach an explicit Q8 fec_rate for one encoded image; absent hint keeps stock behavior.",
+    "files": [
+      "modules/video_coding/include/video_codec_interface.h",
+      "call/rtp_video_sender.cc",
+      "modules/rtp_rtcp/source/rtp_sender_egress.h",
+      "modules/rtp_rtcp/source/rtp_sender_egress.cc",
+      "modules/rtp_rtcp/source/rtp_rtcp_impl2.h",
+      "modules/rtp_rtcp/source/rtp_rtcp_impl2.cc",
+      "api/stats/rtcstats_objects.h",
+      "stats/rtcstats_objects.cc",
+      "media/base/media_channel.h",
+      "media/engine/webrtc_video_engine.cc",
+      "pc/rtc_stats_collector.cc"
+    ],
+    "field": "CodecSpecificInfo::fec_rate (std::optional<std::uint16_t>, Q8) + RTCOutboundRtpStreamStats::fec_packets_sent/fec_bytes_sent",
+    "hook": "RtpVideoSender::OnEncodedImage -> ModuleRtpRtcpImpl2::SetSemanticFecProtectionParams -> RtpSenderEgress semantic FIFO (per-block override wins over FecController dynamic rate for the whole block)",
+    "field_trial_requirement": "WebRTC-GenericPictureId/Enabled/ (otherwise ShouldDisableRedAndUlpfec disables ULPFEC for the generic OCTREE-SIM payload because NACK is negotiated)",
+    "root_cause": "Two defects kept repair at 0: (1) ShouldDisableRedAndUlpfec disabled ULPFEC for generic+NACK; (2) the FecController's zero-loss dynamic rate (fec_rate=0) clobbered the encoder's per-block semantic rate via the shared pending_fec_params_ slot.",
+    "verification": "End-to-end localhost loopback: repair generated with correct rates (P0 fec_rate=128 -> 17/34 and 7/13, P1 fec_rate=32 -> 2/13 and 1/6), fetched via FetchFecPackets, sent through the pacer/SRTP, and observed at the receiver's UlpfecReceiver (ParseAndHandleEncapsulatingHeader). Persistent egress alignment: fec_packets_sent/fec_bytes_sent exposed on RTCOutboundRtpStreamStats and asserted > 0 in localhost_media_flow_test.",
+    "rebuilt_webrtc_library_bytes": 321950212
+  },
+  "fec_receive_stat_gap": {
+    "note": "RTCInboundRtpStreamStats.fec_packets_received is populated only for FlexFEC (webrtc_video_engine.cc:3943-3968), not ULPFEC. The app's fec_packets_received mapping therefore stays nullopt for ULPFEC; wiring UlpfecReceiver::GetPacketCounter() into receive stats is deferred to Task 13 (native FEC recovery). The SEND side is now observable via the non-standard provisional fec_packets_sent/fec_bytes_sent on RTCOutboundRtpStreamStats."
+  },
+  "fec_recovery_observer_seam": {
+    "phase": "Task 13 native FEC recovery -> semantic block assembly",
+    "invariant": "Process-global registration of the existing Task 8 PostFecSourcePayloadObserver for the single-receive-stream localhost loopback; nullptr preserves stock behavior.",
+    "files": [
+      "video/rtp_video_stream_receiver2.h",
+      "video/rtp_video_stream_receiver2.cc"
+    ],
+    "hook": "SetGlobalPostFecSourcePayloadObserver(observer) -> RtpVideoStreamReceiver2 constructor reads the global",
+    "rebuilt_webrtc_library_bytes": 321951532
+  },
+  "srtp_send_observer_seam": {
+    "phase": "Task 14 SRTP confidentiality + RTP transport evidence",
+    "invariant": "Process-global read-only observer of the SRTP send path (plaintext pre-encryption and ciphertext post-encryption); nullptr is a no-op and stock behavior is unchanged.",
+    "files": [
+      "pc/srtp_transport.h",
+      "pc/srtp_transport.cc"
+    ],
+    "hook": "SetGlobalSrtpSendObserver(fn) -> SrtpTransport::SendRtpPacket captures plaintext before ProtectRtp and reports ciphertext after",
+    "verification": "srtp_confidentiality_test asserts the OCTREE-SIM magic appears in the plaintext RTP payload and never in the SRTP ciphertext, and that the pre-SRTP RTP header is version 2 with a non-zero SSRC and payload type.",
+    "rebuilt_webrtc_library_bytes": 321981330
+  }
+}

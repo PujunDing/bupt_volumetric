@@ -1,0 +1,18 @@
+function(bupt_volumetric_import_gtest)
+  if(TARGET GTest::gtest)
+    return()
+  endif()
+  if(NOT TARGET bupt_volumetric::libcxx)
+    message(FATAL_ERROR "bupt_volumetric_apply_webrtc_abi() must run first")
+  endif()
+  set(_gtest_root
+      "${BUPT_VOLUMETRIC_WEBRTC_ROOT}/third_party/googletest/src/googletest")
+  if(NOT EXISTS "${_gtest_root}/src/gtest-all.cc")
+    message(FATAL_ERROR "Missing GoogleTest source: ${_gtest_root}")
+  endif()
+  add_library(bupt_volumetric_gtest STATIC "${_gtest_root}/src/gtest-all.cc")
+  target_include_directories(bupt_volumetric_gtest PUBLIC
+    "${_gtest_root}/include" "${_gtest_root}")
+  target_link_libraries(bupt_volumetric_gtest PUBLIC bupt_volumetric::libcxx)
+  add_library(GTest::gtest ALIAS bupt_volumetric_gtest)
+endfunction()
